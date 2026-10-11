@@ -10,6 +10,25 @@
     "ctaSoon": "Coming soon",
     "switchLanguage": "العربية"
   },
+  "Judges": {
+    "investor": {
+      "name": "The Investor",
+      "focus": "Business model, scalability, return on investment"
+    },
+    "local": {
+      "name": "Local Market Expert",
+      "focus": "Your city: demand, culture, purchasing power, rules, payments"
+    },
+    "marketing": {
+      "name": "Marketing Strategist",
+      "focus": "Channels, ads vs influencers, content, customer cost"
+    },
+    "finance": {
+      "name": "Financial Analyst",
+      "focus": "Costs, pricing, break-even, sales scenarios"
+    },
+    "skeptic": { "name": "The Skeptic", "focus": "Weaknesses, risks and reasons it could fail" }
+  },
   "Status": {
     "label": "System status",
     "dbOk": "Database connected ({latency} ms)",
