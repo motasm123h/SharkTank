@@ -44,21 +44,55 @@
   "Judges": {
     "investor": {
       "name": "The Investor",
+      "short": "Investor",
       "focus": "Business model, scalability, return on investment"
     },
     "local": {
       "name": "Local Market Expert",
+      "short": "Local",
       "focus": "Your city: demand, culture, purchasing power, rules, payments"
     },
     "marketing": {
       "name": "Marketing Strategist",
+      "short": "Marketing",
       "focus": "Channels, ads vs influencers, content, customer cost"
     },
     "finance": {
       "name": "Financial Analyst",
+      "short": "Finance",
       "focus": "Costs, pricing, break-even, sales scenarios"
     },
-    "skeptic": { "name": "The Skeptic", "focus": "Weaknesses, risks and reasons it could fail" }
+    "skeptic": {
+      "name": "The Skeptic",
+      "short": "Skeptic",
+      "focus": "Weaknesses, risks and reasons it could fail"
+    }
+  },
+  "Boardroom": {
+    "title": "The boardroom",
+    "sceneLabel": "The boardroom: five judges behind a table, and you facing them",
+    "seating": "The panel is taking their seats…",
+    "entering": "You walk into the boardroom.",
+    "question": "Question",
+    "asked": "Has asked their question",
+    "answerTo": "Your answer to {name}",
+    "listening": "Listen to the panel…",
+    "placeholder": "Type your answer…",
+    "send": "Send",
+    "hint": "Enter to send · Shift+Enter for a new line",
+    "you": "You",
+    "conversation": "Conversation so far",
+    "yourPitch": "Your pitch",
+    "retry": "Try again",
+    "errors": {
+      "connection": "The connection to the panel dropped.",
+      "panel": "The panel ran into a problem."
+    },
+    "qaDone": {
+      "title": "Questions finished",
+      "body": "The judges have heard your answers. Their debate and verdict are the next part of the show and are still being built. Your answers are saved.",
+      "newPitch": "Start another pitch"
+    }
   },
   "Pitch": {
     "title": "Your pitch",

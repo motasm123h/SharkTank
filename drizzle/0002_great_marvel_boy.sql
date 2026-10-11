@@ -1,0 +1,1 @@
+ALTER TABLE "pitch_sessions" ADD COLUMN "transcript" jsonb DEFAULT '{"questions":[],"answers":[],"debate":[],"verdicts":[]}'::jsonb NOT NULL;

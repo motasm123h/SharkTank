@@ -92,6 +92,7 @@ docs/             product brief
 | vitest                                                               | Unit tests                                                     |
 | react-hook-form                                                      | Form state without re-rendering on every keystroke             |
 | @hookform/resolvers                                                  | Lets the form validate with the same Zod schemas as the server |
+| motion                                                               | Boardroom scene animations (entrance, bubbles), GPU-friendly   |
 
 ## How a session works
 
@@ -104,6 +105,12 @@ With `AI_PROVIDER=mock` (the default), three pre-written scenarios are available
 Arabic: a healthy-food delivery service in Damascus, a tutoring app in Mumbai, and a weak idea
 (a paid water-reminder app in Cairo). The scenario is chosen by the pitch's country, or pinned
 with a demo picker.
+
+In the app, `POST /api/sessions/:id/turn` (optionally with the user's answer) runs one turn and
+streams the events as NDJSON; the transcript is saved to Postgres as it progresses, so a reload
+resumes where the user left off. The boardroom (`src/components/boardroom/`) folds the events
+into scene state with a pure reducer. Judge characters sit behind a `<JudgeAvatar judgeId state />`
+interface so the SVG versions can be swapped for Rive animations later.
 
 Honesty rule: every number is a `Figure` with `isEstimate`; a figure presented as a fact must
 carry a `source`, and the schema rejects it otherwise.

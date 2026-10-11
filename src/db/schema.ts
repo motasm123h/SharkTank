@@ -1,5 +1,5 @@
 import { index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import type { PitchInput, Report } from "@/domain";
+import { EMPTY_TRANSCRIPT, type PitchInput, type Report, type Transcript } from "@/domain";
 
 export const pitchStatus = pgEnum("pitch_status", [
   "intake",
@@ -25,6 +25,8 @@ export const pitchSessions = pgTable(
     input: jsonb("input").$type<PitchInput>().notNull(),
     /** Mock engine only: the demo scenario picked on the intake form. */
     scenarioId: text("scenario_id"),
+    /** Everything said so far; engines continue from it. */
+    transcript: jsonb("transcript").$type<Transcript>().notNull().default(EMPTY_TRANSCRIPT),
     report: jsonb("report").$type<Report>(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
