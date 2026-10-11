@@ -1,0 +1,64 @@
+# Development stack: `docker compose up`
+# Optional DB viewer: `docker compose --profile tools up`
+name: the-panel
+
+services:
+  web:
+    build:
+      context: .
+      target: dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-panel}:${POSTGRES_PASSWORD:-panel}@db:5432/${POSTGRES_DB:-panel}
+      # File-change events don't cross the Windows/macOS bind mount reliably.
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - next_cache:/app/.next
+      - pnpm_store:/pnpm-store
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      start_period: 120s
+      retries: 5
+
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-panel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-panel}
+      POSTGRES_DB: ${POSTGRES_DB:-panel}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  adminer:
+    image: adminer:5
+    profiles: ["tools"]
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+  node_modules:
+  next_cache:
+  pnpm_store:

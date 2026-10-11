@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+/* Base tokens only; the full design system (judge colors, typography) lands in Phase 2. */
+@theme {
+  --color-surface: #0b0f19;
+  --color-surface-raised: #151b2b;
+  --color-ink: #f5f7fb;
+  --color-ink-muted: #9aa4b8;
+  --color-accent: #f5b642;
+  --color-ok: #3ecf8e;
+  --color-danger: #ef5a5a;
+}
+
+html,
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+}

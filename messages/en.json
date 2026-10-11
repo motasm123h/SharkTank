@@ -1,0 +1,18 @@
+{
+  "Meta": {
+    "title": "The Panel",
+    "description": "Pitch your business idea to a panel of AI judges and get a localized verdict."
+  },
+  "Home": {
+    "title": "The Panel",
+    "tagline": "Pitch your idea to five AI judges. Get an honest verdict for your city.",
+    "cta": "Start a pitch",
+    "ctaSoon": "Coming soon",
+    "switchLanguage": "العربية"
+  },
+  "Status": {
+    "label": "System status",
+    "dbOk": "Database connected ({latency} ms)",
+    "dbDown": "Database unavailable"
+  }
+}
