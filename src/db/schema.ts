@@ -1,4 +1,5 @@
-import { jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import type { PitchInput, Report } from "@/domain";
 
 export const pitchStatus = pgEnum("pitch_status", [
   "intake",
@@ -12,15 +13,21 @@ export const pitchStatus = pgEnum("pitch_status", [
 /**
  * A single pitch session. `anonId` comes from a cookie so sessions can be saved
  * before accounts exist; `userId` is attached after login (Phase 6).
- * `input` and `report` hold Zod-validated JSON (contracts arrive in Phase 1).
+ * JSON columns hold Zod-validated data (see src/domain).
  */
-export const pitchSessions = pgTable("pitch_sessions", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  anonId: text("anon_id").notNull(),
-  userId: text("user_id"),
-  status: pitchStatus("status").notNull().default("intake"),
-  input: jsonb("input").notNull(),
-  report: jsonb("report"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-});
+export const pitchSessions = pgTable(
+  "pitch_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    anonId: text("anon_id").notNull(),
+    userId: text("user_id"),
+    status: pitchStatus("status").notNull().default("intake"),
+    input: jsonb("input").$type<PitchInput>().notNull(),
+    /** Mock engine only: the demo scenario picked on the intake form. */
+    scenarioId: text("scenario_id"),
+    report: jsonb("report").$type<Report>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("pitch_sessions_anon_id_idx").on(t.anonId)],
+);

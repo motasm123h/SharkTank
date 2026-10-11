@@ -77,19 +77,21 @@ docs/             product brief
 
 ## Dependencies and why
 
-| Package                                                              | Why                                                           |
-| -------------------------------------------------------------------- | ------------------------------------------------------------- |
-| next, react, react-dom                                               | App framework (App Router)                                    |
-| next-intl                                                            | Arabic/English routing and translations, RTL-aware            |
-| drizzle-orm, drizzle-kit                                             | Typed Postgres queries and migrations                         |
-| postgres                                                             | Fast Postgres driver used by Drizzle                          |
-| zod                                                                  | Validates env vars and every data contract                    |
-| server-only                                                          | Stops server code (DB, secrets) being bundled for the browser |
-| tailwindcss, @tailwindcss/postcss                                    | Styling                                                       |
-| eslint, eslint-config-next, @eslint/eslintrc, eslint-config-prettier | Linting                                                       |
-| prettier, prettier-plugin-tailwindcss                                | Formatting, with sorted Tailwind classes                      |
-| typescript, @types/\*                                                | Strict typing                                                 |
-| vitest                                                               | Unit tests                                                    |
+| Package                                                              | Why                                                            |
+| -------------------------------------------------------------------- | -------------------------------------------------------------- |
+| next, react, react-dom                                               | App framework (App Router)                                     |
+| next-intl                                                            | Arabic/English routing and translations, RTL-aware             |
+| drizzle-orm, drizzle-kit                                             | Typed Postgres queries and migrations                          |
+| postgres                                                             | Fast Postgres driver used by Drizzle                           |
+| zod                                                                  | Validates env vars and every data contract                     |
+| server-only                                                          | Stops server code (DB, secrets) being bundled for the browser  |
+| tailwindcss, @tailwindcss/postcss                                    | Styling                                                        |
+| eslint, eslint-config-next, @eslint/eslintrc, eslint-config-prettier | Linting                                                        |
+| prettier, prettier-plugin-tailwindcss                                | Formatting, with sorted Tailwind classes                       |
+| typescript, @types/\*                                                | Strict typing                                                  |
+| vitest                                                               | Unit tests                                                     |
+| react-hook-form                                                      | Form state without re-rendering on every keystroke             |
+| @hookform/resolvers                                                  | Lets the form validate with the same Zod schemas as the server |
 
 ## How a session works
 

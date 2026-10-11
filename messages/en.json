@@ -3,12 +3,43 @@
     "title": "The Panel",
     "description": "Pitch your business idea to a panel of AI judges and get a localized verdict."
   },
+  "Nav": {
+    "home": "The Panel — home",
+    "skipToContent": "Skip to content",
+    "switchLanguage": "العربية",
+    "switchLanguageLabel": "اقرأ هذه الصفحة بالعربية",
+    "themeToDark": "Switch to dark mode",
+    "themeToLight": "Switch to light mode"
+  },
   "Home": {
-    "title": "The Panel",
-    "tagline": "Pitch your idea to five AI judges. Get an honest verdict for your city.",
+    "eyebrow": "AI idea validator",
+    "title": "Pitch your idea to the panel",
+    "tagline": "Five AI judges question your idea, argue about it and give you an honest verdict, based on your city, not on Silicon Valley.",
     "cta": "Start a pitch",
-    "ctaSoon": "Coming soon",
-    "switchLanguage": "العربية"
+    "panelTitle": "Meet the panel",
+    "panelIntro": "Each judge looks at your idea from a different angle.",
+    "howTitle": "How it works",
+    "steps": {
+      "pitch": {
+        "title": "Pitch",
+        "body": "Describe your idea, your city, your budget and how far along you are."
+      },
+      "qa": {
+        "title": "Questions",
+        "body": "Each judge asks you one or two sharp questions."
+      },
+      "debate": {
+        "title": "Debate and verdict",
+        "body": "The judges argue with each other, then say “I'm in” or “I'm out”."
+      },
+      "report": {
+        "title": "Report",
+        "body": "Get a visual report: can it sell, how to market it, where else it could work, and your first three steps."
+      }
+    },
+    "localTitle": "Advice for where you actually are",
+    "localBody": "Payment habits, purchasing power, the platforms people use, local rules. A pitch from Damascus and a pitch from Mumbai get very different answers.",
+    "honesty": "Every number is marked as an estimate or a sourced fact."
   },
   "Judges": {
     "investor": {
@@ -29,9 +60,85 @@
     },
     "skeptic": { "name": "The Skeptic", "focus": "Weaknesses, risks and reasons it could fail" }
   },
-  "Status": {
-    "label": "System status",
-    "dbOk": "Database connected ({latency} ms)",
-    "dbDown": "Database unavailable"
+  "Pitch": {
+    "title": "Your pitch",
+    "intro": "Tell the panel about your idea. The more specific you are, the better their questions.",
+    "demo": {
+      "title": "Try a demo pitch",
+      "body": "No AI key is connected yet, so the panel plays pre-written sessions. Pick one to fill in the form.",
+      "selected": "Demo selected: {name}",
+      "clear": "Clear demo",
+      "scenarios": {
+        "damascus-healthy-food": "Healthy meal delivery · Damascus",
+        "mumbai-tutoring": "Tutoring app · Mumbai",
+        "cairo-water-app": "Water-reminder app · Cairo"
+      }
+    },
+    "fields": {
+      "idea": {
+        "label": "Your idea",
+        "hint": "What you sell, to whom, and how they pay.",
+        "placeholder": "Example: a weekly box of healthy lunches for office workers, ordered on WhatsApp and paid on delivery.",
+        "counter": "{count} / {max}"
+      },
+      "country": { "label": "Country", "placeholder": "Choose a country" },
+      "city": { "label": "City", "placeholder": "Example: Damascus" },
+      "budget": {
+        "label": "Starting budget",
+        "hint": "Roughly how much you can spend to launch.",
+        "min": "From",
+        "max": "To",
+        "currency": "Currency"
+      },
+      "mode": {
+        "label": "How do you want to run it?",
+        "online": { "title": "Online", "body": "App, website or social media only" },
+        "physical": { "title": "Physical", "body": "A shop, office or venue" },
+        "hybrid": { "title": "Hybrid", "body": "Both online and a physical place" }
+      },
+      "stage": {
+        "label": "Where are you now?",
+        "idea": { "title": "Idea", "body": "Nothing built yet" },
+        "prototype": { "title": "Prototype", "body": "Something to show, no sales" },
+        "selling": { "title": "Selling", "body": "Already have customers" }
+      },
+      "language": {
+        "label": "Language of the session",
+        "en": "English",
+        "ar": "العربية"
+      }
+    },
+    "submit": "Enter the boardroom",
+    "submitting": "Saving your pitch…",
+    "errors": {
+      "summary": "Please fix the highlighted fields.",
+      "required": "This field is required.",
+      "ideaTooShort": "Describe your idea in at least {min} characters.",
+      "ideaTooLong": "Keep your idea under {max} characters.",
+      "country": "Choose a country.",
+      "city": "Enter your city.",
+      "number": "Enter a number, for example 5000.",
+      "budgetOrder": "“To” must be at least as much as “From”.",
+      "invalid": "Something in the form isn't valid. Please check it and try again.",
+      "server": "We couldn't save your pitch. Please try again in a moment."
+    }
+  },
+  "Saved": {
+    "title": "Your pitch is saved",
+    "body": "The boardroom is still being built. Your pitch is saved and will open here when it's ready.",
+    "idea": "Idea",
+    "place": "Location",
+    "budget": "Budget",
+    "mode": "Format",
+    "stage": "Stage",
+    "language": "Language",
+    "placeValue": "{city}, {country}",
+    "demo": "Demo scenario",
+    "newPitch": "Start another pitch"
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "body": "This page doesn't exist, or it isn't yours to see.",
+    "home": "Back to the home page"
   }
 }

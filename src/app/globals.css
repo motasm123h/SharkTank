@@ -1,18 +1,127 @@
 @import "tailwindcss";
 
-/* Base tokens only; the full design system (judge colors, typography) lands in Phase 2. */
-@theme {
-  --color-surface: #0b0f19;
-  --color-surface-raised: #151b2b;
-  --color-ink: #f5f7fb;
-  --color-ink-muted: #9aa4b8;
-  --color-accent: #f5b642;
-  --color-ok: #3ecf8e;
-  --color-danger: #ef5a5a;
+/*
+ * Design tokens. Raw values live in CSS variables so light/dark can swap them;
+ * Tailwind utilities (bg-surface, text-ink, bg-judge-investor, …) point at them.
+ * Theme: follows the OS unless <html data-theme="light|dark"> is set.
+ */
+:root {
+  color-scheme: light;
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #eef1f7;
+  --border: #dde2ec;
+  --ink: #111727;
+  --ink-muted: #556078;
+  --accent: #b97c0c;
+  --accent-strong: #9a6608;
+  --on-accent: #ffffff;
+  --ok: #16865a;
+  --danger: #c53b3b;
+  --focus: #2f6fe0;
+
+  /* One color per judge (keep in sync with JUDGES in src/domain/judges.ts). */
+  --judge-investor: #f5b642;
+  --judge-local: #3ecf8e;
+  --judge-marketing: #e85d9e;
+  --judge-finance: #4f8ff7;
+  --judge-skeptic: #9b6bff;
 }
 
-html,
-body {
-  background: var(--color-surface);
-  color: var(--color-ink);
+/* Dark values appear twice: explicit choice, and OS preference when no choice is stored. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0f19;
+  --surface: #131a2a;
+  --surface-2: #1b2336;
+  --border: #283250;
+  --ink: #f3f5fa;
+  --ink-muted: #9ba6bc;
+  --accent: #f5b642;
+  --accent-strong: #ffc85c;
+  --on-accent: #1a1205;
+  --ok: #3ecf8e;
+  --danger: #f06a6a;
+  --focus: #7aa7ff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0b0f19;
+    --surface: #131a2a;
+    --surface-2: #1b2336;
+    --border: #283250;
+    --ink: #f3f5fa;
+    --ink-muted: #9ba6bc;
+    --accent: #f5b642;
+    --accent-strong: #ffc85c;
+    --on-accent: #1a1205;
+    --ok: #3ecf8e;
+    --danger: #f06a6a;
+    --focus: #7aa7ff;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-on-accent: var(--on-accent);
+  --color-ok: var(--ok);
+  --color-danger: var(--danger);
+  --color-focus: var(--focus);
+
+  --color-judge-investor: var(--judge-investor);
+  --color-judge-local: var(--judge-local);
+  --color-judge-marketing: var(--judge-marketing);
+  --color-judge-finance: var(--judge-finance);
+  --color-judge-skeptic: var(--judge-skeptic);
+
+  --font-sans: var(--font-latin), var(--font-arabic), ui-sans-serif, system-ui, sans-serif;
+  --font-arabic-first: var(--font-arabic), var(--font-latin), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+
+  /*
+   * Arabic font first for anything in Arabic (whole pages and lang="ar" snippets).
+   * Latin first would match the Latin font's Arial-based fallback, which also
+   * has Arabic glyphs, so the Arabic font would never load.
+   */
+  :lang(ar) {
+    font-family: var(--font-arabic-first);
+  }
+
+  html:lang(ar) body {
+    line-height: 1.7;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
