@@ -32,6 +32,11 @@ services:
       db:
         condition: service_healthy
 
+  gotenberg:
+    image: gotenberg/gotenberg:8
+    restart: unless-stopped
+    command: ["gotenberg", "--api-timeout=90s", "--log-level=warn"]
+
   db:
     image: postgres:17-alpine
     restart: unless-stopped

@@ -128,7 +128,8 @@
     },
     "done": {
       "title": "The panel has spoken",
-      "body": "Your full report (sales scenarios, marketing plan, where else the idea could work and your first steps) is the next part of the show and is still being built. Your session is saved.",
+      "body": "Your report is ready: whether it can sell, sales scenarios, a marketing plan for your city, where else the idea could work, and your first three steps.",
+      "seeReport": "See your report",
       "newPitch": "Start another pitch"
     }
   },
@@ -207,6 +208,133 @@
     "placeValue": "{city}, {country}",
     "demo": "Demo scenario",
     "newPitch": "Start another pitch"
+  },
+  "Report": {
+    "eyebrow": "The panel's report",
+    "title": "Your report",
+    "subtitle": "{city}, {country} · {date}",
+    "legend": {
+      "intro": "How to read the numbers:",
+      "estimate": "Estimate",
+      "fact": "Fact",
+      "source": "Source",
+      "sourceExample": "facts always name their source"
+    },
+    "verdict": {
+      "title": "Can it sell?",
+      "outOf": "/ 100",
+      "canSell": {
+        "yes": "Yes, it can sell",
+        "conditional": "Yes, under conditions",
+        "no": "Not as it stands"
+      },
+      "breakdown": "Score breakdown",
+      "breakdownNote": "0–10 for each. Higher is better for your idea."
+    },
+    "dimensions": {
+      "demand": "Demand",
+      "competition": "Low competition",
+      "purchasingPower": "Spending power",
+      "easeOfLaunch": "Ease of launch",
+      "scalability": "Scalability"
+    },
+    "figures": { "title": "Key numbers" },
+    "plan": {
+      "title": "How to sell it",
+      "titleNo": "What would have to change",
+      "price": "Starting price",
+      "channels": "Where to sell",
+      "firstCustomers": "Your first customers",
+      "whatMustChange": "What has to change"
+    },
+    "scenarios": {
+      "title": "Sales scenarios",
+      "note": "Estimated monthly revenue in {currency}, from launch.",
+      "kinds": {
+        "pessimistic": "Pessimistic",
+        "realistic": "Realistic",
+        "optimistic": "Optimistic"
+      },
+      "month": "Month {n}",
+      "monthHeader": "Month",
+      "showTable": "Show as a table",
+      "hideTable": "Hide the table",
+      "assumptions": "Assumes"
+    },
+    "reasons": {
+      "success": "Why it could succeed",
+      "failure": "Why it could fail"
+    },
+    "marketing": {
+      "title": "Marketing plan",
+      "budgetTitle": "Monthly budget by channel",
+      "total": "Total per month:",
+      "priority": "Priority {n}",
+      "monthly": "Per month",
+      "cac": "Cost per new customer",
+      "channels": {
+        "meta_ads": "Meta ads (Facebook, Instagram)",
+        "influencers": "Influencers & creators",
+        "whatsapp": "WhatsApp",
+        "tiktok": "TikTok",
+        "google_ads": "Google ads",
+        "seo_content": "Content & SEO",
+        "offline": "Offline (flyers, stands)",
+        "partnerships": "Partnerships",
+        "referrals": "Referrals"
+      }
+    },
+    "location": {
+      "title": "Online or physical?",
+      "recommended": "Recommended: {mode}"
+    },
+    "timing": {
+      "title": "Is the market ready?",
+      "scale": "Market timing",
+      "too_early": "Too early",
+      "right_time": "Right time",
+      "late": "Late",
+      "signals": "Signals"
+    },
+    "local": {
+      "title": "Local reality in {city}",
+      "payments": "How people pay",
+      "platforms": "Where people are online",
+      "realities": "Things to plan for"
+    },
+    "global": {
+      "title": "Where else it could work",
+      "hint": "Tap or hover a highlighted country to see why.",
+      "viewLabel": "Map view",
+      "views": { "globe": "3D globe", "flat": "Flat map" },
+      "loading": "Loading the map…",
+      "legendLow": "Weaker fit",
+      "legendHigh": "Stronger fit",
+      "fitLabel": "fit {score}/100",
+      "listTitle": "Countries ranked by fit",
+      "estimate": "estimate"
+    },
+    "similar": {
+      "title": "Similar ideas and competitors",
+      "none": "No close matches found.",
+      "status": { "active": "Active", "closed": "Closed", "unknown": "Status unknown" }
+    },
+    "improve": { "title": "How to make the idea stronger" },
+    "steps": { "title": "Your first 3 steps this week" },
+    "actions": {
+      "pdf": "Download PDF",
+      "pdfPreparing": "Preparing the PDF…",
+      "pdfError": "The PDF couldn't be created. Please try again.",
+      "pdfFilename": "the-panel-report.pdf",
+      "share": "Copy share link",
+      "shareCreating": "Creating the link…",
+      "shareCopied": "Link copied.",
+      "shareError": "The link couldn't be created. Please try again.",
+      "shareLinkLabel": "Share link",
+      "shareNote": "Anyone with this link can view the report, without your answers.",
+      "backToBoardroom": "Back to the boardroom",
+      "sharedNotice": "You're viewing a shared report."
+    }
   },
   "NotFound": {
     "title": "Page not found",

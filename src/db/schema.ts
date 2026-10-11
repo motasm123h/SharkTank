@@ -28,6 +28,8 @@ export const pitchSessions = pgTable(
     /** Everything said so far; engines continue from it. */
     transcript: jsonb("transcript").$type<Transcript>().notNull().default(EMPTY_TRANSCRIPT),
     report: jsonb("report").$type<Report>(),
+    /** Set when the owner creates a public share link; null = private. */
+    shareToken: text("share_token").unique(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

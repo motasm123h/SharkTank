@@ -233,10 +233,16 @@ export function Boardroom({ sessionId, transcript, language }: Props) {
               <h2 className="text-xl font-bold">{t("done.title")}</h2>
               <p className="text-ink-muted">{t("done.body")}</p>
               <div className="flex flex-wrap gap-3">
+                <Link
+                  href={`/report/${sessionId}`}
+                  className="bg-accent text-on-accent hover:bg-accent-strong rounded-xl px-5 py-2.5 font-semibold"
+                >
+                  {t("done.seeReport")}
+                </Link>
                 <button
                   type="button"
                   onClick={replay}
-                  className="bg-accent text-on-accent hover:bg-accent-strong rounded-xl px-5 py-2.5 font-semibold"
+                  className="border-border hover:bg-surface-2 rounded-xl border px-5 py-2.5 font-semibold"
                 >
                   ↺ {t("controls.replay")}
                 </button>

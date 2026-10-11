@@ -11,6 +11,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Server modules validate the environment; tests never touch this database.
+    env: { DATABASE_URL: "postgres://test:test@localhost:5432/test" },
     include: ["src/**/*.test.ts"],
   },
 });
