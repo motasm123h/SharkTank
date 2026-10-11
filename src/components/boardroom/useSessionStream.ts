@@ -1,8 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useReducer, useRef } from "react";
-import { SessionEventSchema, type Answer, type Transcript } from "@/domain";
-import { needsTurn, sceneFromTranscript, sceneReducer, type SceneState } from "./sceneState";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { SessionEventSchema, type Answer, type SessionEvent, type Transcript } from "@/domain";
+import { replayTimeline } from "./replay";
+import {
+  EMPTY_SCENE,
+  isPerforming,
+  needsTurn,
+  sceneFromTranscript,
+  sceneReducer,
+} from "./sceneState";
 
 /** Reads an NDJSON body line by line. */
 async function* readLines(body: ReadableStream<Uint8Array>): AsyncGenerator<string> {
@@ -24,20 +31,31 @@ async function* readLines(body: ReadableStream<Uint8Array>): AsyncGenerator<stri
   if (buffer.trim()) yield buffer.trim();
 }
 
-type Options = {
-  sessionId: string;
-  transcript: Transcript;
-  /** Stop listening once this phase starts (later phases are built separately). */
-  stopAtPhase?: SceneState["phase"];
-};
+/** Keeps a client-side copy of the transcript in step with the stream (used by replay). */
+function mirror(transcript: Transcript, event: SessionEvent): void {
+  if (event.type === "question") transcript.questions.push(event.question);
+  if (event.type === "debate_turn") transcript.debate.push(event.turn);
+  if (event.type === "verdict") transcript.verdicts.push(event.verdict);
+  if (event.type === "report") transcript.report = event.report;
+}
 
-/** Drives the boardroom: runs turns against the API and folds the events into scene state. */
-export function useSessionStream({ sessionId, transcript, stopAtPhase }: Options) {
-  const [state, dispatch] = useReducer(sceneReducer, transcript, sceneFromTranscript);
+export type PlaybackMode = "live" | "replay";
+
+type Options = { sessionId: string; transcript: Transcript };
+
+/**
+ * Drives the boardroom: runs turns against the API, folds the events into
+ * scene state, and offers skip (fast-forward) and replay.
+ */
+export function useSessionStream({ sessionId, transcript: initial }: Options) {
+  const [state, dispatch] = useReducer(sceneReducer, initial, sceneFromTranscript);
+  const [mode, setMode] = useState<PlaybackMode>("live");
+  const transcriptRef = useRef<Transcript>(structuredClone(initial));
   const controllerRef = useRef<AbortController | null>(null);
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const runTurn = useCallback(
-    async (answer?: Answer) => {
+    async (options: { answer?: Answer; fast?: boolean } = {}) => {
       controllerRef.current?.abort();
       const controller = new AbortController();
       controllerRef.current = controller;
@@ -47,18 +65,15 @@ export function useSessionStream({ sessionId, transcript, stopAtPhase }: Options
         const response = await fetch(`/api/sessions/${sessionId}/turn`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answer }),
+          body: JSON.stringify(options),
           signal: controller.signal,
         });
         if (!response.ok || !response.body) throw new Error(`HTTP ${response.status}`);
 
         for await (const line of readLines(response.body)) {
           const event = SessionEventSchema.parse(JSON.parse(line));
+          mirror(transcriptRef.current, event);
           dispatch({ type: "event", event });
-          if (stopAtPhase && event.type === "phase" && event.phase === stopAtPhase) {
-            controller.abort();
-            break;
-          }
         }
       } catch (error) {
         if (!controller.signal.aborted) {
@@ -67,19 +82,49 @@ export function useSessionStream({ sessionId, transcript, stopAtPhase }: Options
         }
       }
     },
-    [sessionId, stopAtPhase],
+    [sessionId],
   );
+
+  const clearTimers = () => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  };
 
   const answer = useCallback(
     (questionId: string, text: string) => {
+      transcriptRef.current.answers.push({ questionId, text });
       dispatch({ type: "answer_sent", questionId, text });
-      void runTurn({ questionId, text });
+      void runTurn({ answer: { questionId, text } });
     },
     [runTurn],
   );
 
   /** Retries after a connection error. Resends nothing the server already saved. */
   const retry = useCallback(() => void runTurn(), [runTurn]);
+
+  /** Fast-forward: finish what the panel is doing right now, without delays. */
+  const skip = useCallback(() => {
+    if (mode === "replay") {
+      clearTimers();
+      setMode("live");
+      dispatch({ type: "reset", state: sceneFromTranscript(transcriptRef.current) });
+      return;
+    }
+    void runTurn({ fast: true });
+  }, [mode, runTurn]);
+
+  /** Plays the finished session again from the entrance. */
+  const replay = useCallback(() => {
+    clearTimers();
+    setMode("replay");
+    dispatch({ type: "reset", state: EMPTY_SCENE });
+    let at = 0;
+    for (const { action, delayMs } of replayTimeline(transcriptRef.current)) {
+      at += delayMs;
+      timersRef.current.push(setTimeout(() => dispatch(action), at));
+    }
+    timersRef.current.push(setTimeout(() => setMode("live"), at + 50));
+  }, []);
 
   // Start (or resume) the panel when nothing is waiting on the user.
   const shouldStart = needsTurn(state);
@@ -91,7 +136,22 @@ export function useSessionStream({ sessionId, transcript, stopAtPhase }: Options
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => () => controllerRef.current?.abort(), []);
+  useEffect(
+    () => () => {
+      controllerRef.current?.abort();
+      clearTimers();
+    },
+    [],
+  );
 
-  return { state, answer, retry };
+  return {
+    state,
+    mode,
+    answer,
+    retry,
+    skip,
+    replay,
+    canSkip: mode === "replay" || isPerforming(state),
+    canReplay: mode === "live" && state.phase === "done",
+  };
 }

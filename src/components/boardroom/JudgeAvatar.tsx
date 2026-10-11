@@ -189,15 +189,15 @@ function StateBadge({ state }: { state: JudgeState }) {
     return (
       <g>
         <circle
-          cx={70}
-          cy={92}
+          cx={22}
+          cy={26}
           r={9}
           fill={ok ? "#16a34a" : "#dc2626"}
           stroke="#fff"
           strokeWidth={2}
         />
         <path
-          d={ok ? "M65.5 92 L69 95.5 L75 88.5" : "M66.5 88.5 L73.5 95.5 M73.5 88.5 L66.5 95.5"}
+          d={ok ? "M17.5 26 L21 29.5 L27 22.5" : "M18.5 22.5 L25.5 29.5 M25.5 22.5 L18.5 29.5"}
           stroke="#fff"
           strokeWidth={2.4}
           fill="none"

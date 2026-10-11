@@ -3,7 +3,14 @@ import { EMPTY_TRANSCRIPT, type PitchInput, type SessionEvent, type Transcript }
 import { localize } from "@/engine/mock/localize";
 import { INSTANT_PACING, MockEngine } from "@/engine/mock/MockEngine";
 import { MOCK_SCENARIOS } from "@/engine/mock/scenarios";
-import { needsTurn, sceneFromTranscript, sceneReducer, type SceneState } from "./sceneState";
+import { replayTimeline } from "./replay";
+import {
+  EMPTY_SCENE,
+  needsTurn,
+  sceneFromTranscript,
+  sceneReducer,
+  type SceneState,
+} from "./sceneState";
 
 const engine = new MockEngine(INSTANT_PACING);
 const scenario = MOCK_SCENARIOS[0]!;
@@ -109,5 +116,108 @@ describe("sceneReducer", () => {
       event: { type: "speech_delta", speechId: "nope", delta: "x" },
     });
     expect(next).toBe(state);
+  });
+});
+
+async function playToEnd(): Promise<{ state: SceneState; transcript: Transcript }> {
+  let state = sceneFromTranscript(EMPTY_TRANSCRIPT);
+  const transcript: Transcript = structuredClone(EMPTY_TRANSCRIPT);
+  for (let turn = 0; turn < 10 && state.phase !== "done"; turn++) {
+    const events = await collect(transcript);
+    for (const e of events) {
+      if (e.type === "question") transcript.questions.push(e.question);
+      if (e.type === "debate_turn") transcript.debate.push(e.turn);
+      if (e.type === "verdict") transcript.verdicts.push(e.verdict);
+      if (e.type === "report") transcript.report = e.report;
+    }
+    state = fold(state, events);
+    if (state.awaiting) {
+      transcript.answers.push({ questionId: state.awaiting, text: "ok" });
+      state = sceneReducer(state, { type: "answer_sent", questionId: state.awaiting, text: "ok" });
+    }
+  }
+  return { state, transcript };
+}
+
+describe("debate and verdict", () => {
+  it("plays through to the score and the end of the show", async () => {
+    const { state } = await playToEnd();
+    expect(state.phase).toBe("done");
+    expect(state.debate.length).toBeGreaterThanOrEqual(4);
+    expect(state.verdicts).toHaveLength(5);
+    expect(state.score?.unit).toBe("score");
+    expect(state.reportReady).toBe(true);
+    expect(state.speech).toBeNull();
+    for (const v of state.verdicts) expect(state.judges[v.judgeId]).toBe(v.decision);
+    expect(needsTurn(state)).toBe(false);
+  });
+
+  it("knows who a debate line answers while it is still streaming", async () => {
+    let state = sceneFromTranscript(EMPTY_TRANSCRIPT);
+    state = sceneReducer(state, {
+      type: "event",
+      event: {
+        type: "speech_start",
+        speechId: "d2",
+        judgeId: "skeptic",
+        kind: "debate",
+        stance: "disagrees",
+        replyTo: { turnId: "d1", judgeId: "investor" },
+      },
+    });
+    expect(state.speech).toMatchObject({
+      stance: "disagrees",
+      replyTo: { judgeId: "investor" },
+      done: false,
+    });
+  });
+
+  it("resumes a finished session as done, with verdict states", async () => {
+    const { transcript } = await playToEnd();
+    const state = sceneFromTranscript(transcript);
+    expect(state.phase).toBe("done");
+    expect(state.score).toEqual(transcript.report?.overallScore);
+    expect(state.verdicts).toHaveLength(5);
+    expect(needsTurn(state)).toBe(false);
+  });
+
+  it("resumes mid-debate and asks for the next turn", async () => {
+    const { transcript } = await playToEnd();
+    const state = sceneFromTranscript({
+      ...transcript,
+      debate: transcript.debate.slice(0, 2),
+      verdicts: [],
+      report: undefined,
+    });
+    expect(state.phase).toBe("debate");
+    expect(needsTurn(state)).toBe(true);
+  });
+});
+
+describe("replay", () => {
+  it("rebuilds the whole show from the transcript", async () => {
+    const { state: live, transcript } = await playToEnd();
+    const replayed = replayTimeline(transcript).reduce(
+      (s, { action }) => sceneReducer(s, action),
+      EMPTY_SCENE,
+    );
+    expect(replayed.phase).toBe("done");
+    expect(replayed.verdicts).toEqual(live.verdicts);
+    expect(replayed.debate).toEqual(live.debate);
+    expect(replayed.score).toEqual(live.score);
+    expect(replayed.history.filter((h) => h.type === "answer")).toHaveLength(5);
+    expect(replayed.judges).toEqual(live.judges);
+  });
+
+  it("starts with the entrance and takes a watchable amount of time", async () => {
+    const { transcript } = await playToEnd();
+    const timeline = replayTimeline(transcript);
+    expect(timeline[0]?.action).toEqual({
+      type: "event",
+      event: { type: "phase", phase: "entrance" },
+    });
+    const totalMs = timeline.reduce((sum, t) => sum + t.delayMs, 0);
+    expect(totalMs).toBeGreaterThan(20_000);
+    expect(totalMs).toBeLessThan(180_000);
   });
 });

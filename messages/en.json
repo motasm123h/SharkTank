@@ -88,9 +88,47 @@
       "connection": "The connection to the panel dropped.",
       "panel": "The panel ran into a problem."
     },
-    "qaDone": {
-      "title": "Questions finished",
-      "body": "The judges have heard your answers. Their debate and verdict are the next part of the show and are still being built. Your answers are saved.",
+    "phase": {
+      "qa": "Questions",
+      "debate": "Debate",
+      "verdict": "Verdict"
+    },
+    "replaying": "Replay",
+    "controls": {
+      "skip": "Skip",
+      "skipLabel": "Skip ahead: show the rest of this part right away",
+      "replay": "Replay"
+    },
+    "debateStarting": "The judges turn to each other…",
+    "panelHasSpoken": "The panel has spoken.",
+    "verdict": "Verdict",
+    "verdicts": "Verdicts",
+    "in": "I'm in",
+    "out": "I'm out",
+    "pending": "Deciding…",
+    "stance": {
+      "opens": "Opens",
+      "agrees": "Agrees",
+      "disagrees": "Disagrees",
+      "builds_on": "Builds on it"
+    },
+    "replyStance": {
+      "opens": "opens",
+      "agrees": "agrees with",
+      "disagrees": "disagrees with",
+      "builds_on": "builds on"
+    },
+    "score": {
+      "title": "Overall score",
+      "outOf": "/100",
+      "ins": "{count} in",
+      "outs": "{count} out",
+      "estimate": "Estimate, not a measured fact",
+      "announce": "Overall score: {score} out of 100"
+    },
+    "done": {
+      "title": "The panel has spoken",
+      "body": "Your full report (sales scenarios, marketing plan, where else the idea could work and your first steps) is the next part of the show and is still being built. Your session is saved.",
       "newPitch": "Start another pitch"
     }
   },

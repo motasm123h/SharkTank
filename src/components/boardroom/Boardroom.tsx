@@ -6,9 +6,12 @@ import { JUDGES, type JudgeId, type Locale, type Transcript } from "@/domain";
 import { Link } from "@/i18n/navigation";
 import { directionOf } from "@/i18n/routing";
 import { AnswerComposer } from "./AnswerComposer";
+import { ConversationLog } from "./ConversationLog";
 import { JudgeSeat } from "./JudgeSeat";
+import { ScoreReveal } from "./ScoreReveal";
 import { SpeechBubble } from "./SpeechBubble";
 import { UserAvatar } from "./UserAvatar";
+import { VerdictBoard } from "./VerdictBoard";
 import { useSessionStream } from "./useSessionStream";
 
 type Props = {
@@ -23,23 +26,34 @@ const JUDGE_BY_ID = Object.fromEntries(JUDGES.map((j) => [j.id, j])) as Record<
   (typeof JUDGES)[number]
 >;
 
+const PHASE_LABEL = {
+  loading: "qa",
+  entrance: "qa",
+  qa: "qa",
+  debate: "debate",
+  verdict: "verdict",
+  report: "verdict",
+  done: "verdict",
+} as const;
+
 export function Boardroom({ sessionId, transcript, language }: Props) {
   const t = useTranslations("Boardroom");
   const tj = useTranslations("Judges");
   const uiLocale = useLocale() as Locale;
-  // Phase 3 covers entrance + Q&A; the debate is built next.
-  const { state, answer, retry } = useSessionStream({
+  const { state, mode, answer, retry, skip, replay, canSkip, canReplay } = useSessionStream({
     sessionId,
     transcript,
-    stopAtPhase: "debate",
   });
 
-  const speaker = state.speech ? JUDGE_BY_ID[state.speech.judgeId] : null;
+  const { speech } = state;
+  const speaker = speech ? JUDGE_BY_ID[speech.judgeId] : null;
   const pending = state.awaiting
     ? state.history.findLast((h) => h.type === "question" && h.id === state.awaiting)
     : undefined;
-  const asker = pending && pending.type === "question" ? pending.judgeId : null;
-  const qaOver = state.phase !== "loading" && state.phase !== "entrance" && state.phase !== "qa";
+  const asker = pending?.type === "question" ? pending.judgeId : null;
+  const inQa = state.phase === "loading" || state.phase === "entrance" || state.phase === "qa";
+  const showVerdicts = state.verdicts.length > 0 || state.phase === "verdict" || state.score;
+  const target = speech?.kind === "debate" && speech.replyTo && speech.stance ? speech : null;
   const offstage = directionOf(uiLocale) === "rtl" ? "60vw" : "-60vw";
 
   return (
@@ -50,16 +64,48 @@ export function Boardroom({ sessionId, transcript, language }: Props) {
             aria-label={t("sceneLabel")}
             className="border-border relative overflow-hidden rounded-3xl border bg-gradient-to-b from-[var(--surface-2)] to-[var(--bg)]"
           >
+            {/* part of the show + skip / replay */}
+            <div className="relative z-20 flex items-center justify-between gap-2 px-3 pt-3 sm:px-5">
+              <span className="bg-surface/80 text-ink-muted rounded-full px-3 py-1 text-xs font-semibold backdrop-blur">
+                {mode === "replay" ? t("replaying") : t(`phase.${PHASE_LABEL[state.phase]}`)}
+              </span>
+              <div className="flex gap-2">
+                {canReplay && (
+                  <button
+                    type="button"
+                    onClick={replay}
+                    className="bg-surface border-border hover:bg-surface-2 rounded-full border px-3 py-1.5 text-xs font-semibold"
+                  >
+                    ↺ {t("controls.replay")}
+                  </button>
+                )}
+                {canSkip && (
+                  <button
+                    type="button"
+                    onClick={skip}
+                    aria-label={t("controls.skipLabel")}
+                    title={t("controls.skipLabel")}
+                    className="bg-surface border-border hover:bg-surface-2 rounded-full border px-3 py-1.5 text-xs font-semibold"
+                  >
+                    {t("controls.skip")} <span className="inline-block rtl:-scale-x-100">»</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* judges behind the table */}
-            <div className="grid grid-cols-5 gap-1 px-2 pt-5 sm:gap-4 sm:px-8 sm:pt-8">
+            <div className="grid grid-cols-5 gap-1 px-2 pt-3 sm:gap-4 sm:px-8 sm:pt-4">
               {JUDGES.map((judge) => (
                 <JudgeSeat
                   key={judge.id}
                   judge={judge}
                   state={state.judges[judge.id]}
-                  active={state.speech?.judgeId === judge.id && !qaOver}
-                  dimmed={!!state.speech && state.speech.judgeId !== judge.id && !state.speech.done}
-                  asked={state.asked.includes(judge.id)}
+                  active={speech?.judgeId === judge.id}
+                  dimmed={!!speech && speech.judgeId !== judge.id && !speech.done}
+                  asked={inQa && state.asked.includes(judge.id)}
+                  targetedBy={
+                    target?.replyTo?.judgeId === judge.id ? (target.stance ?? null) : null
+                  }
                   name={tj(`${judge.id}.name`)}
                   askedLabel={t("asked")}
                 />
@@ -78,15 +124,31 @@ export function Boardroom({ sessionId, transcript, language }: Props) {
 
             {/* what is being said */}
             <div className="min-h-36 px-3 pt-5 pb-2 sm:min-h-40 sm:px-8">
-              <AnimatePresence mode="wait">
-                {state.speech && speaker && !qaOver ? (
+              <>
+                {speech && speaker ? (
                   <SpeechBubble
-                    key={state.speech.id}
-                    speech={state.speech}
+                    key={speech.id}
+                    speech={speech}
                     judge={speaker}
                     name={tj(`${speaker.id}.name`)}
                     language={language}
-                    kindLabel={state.speech.kind === "question" ? t("question") : undefined}
+                    kindLabel={
+                      speech.kind === "question"
+                        ? t("question")
+                        : speech.kind === "verdict"
+                          ? t("verdict")
+                          : undefined
+                    }
+                    reply={
+                      target?.replyTo && target.stance
+                        ? {
+                            name: tj(`${target.replyTo.judgeId}.name`),
+                            color: JUDGE_BY_ID[target.replyTo.judgeId].color,
+                            stance: target.stance,
+                            label: t(`stance.${target.stance}`),
+                          }
+                        : undefined
+                    }
                   />
                 ) : (
                   <m.p
@@ -97,9 +159,11 @@ export function Boardroom({ sessionId, transcript, language }: Props) {
                   >
                     {state.phase === "loading" && t("seating")}
                     {state.phase === "entrance" && t("entering")}
+                    {state.phase === "debate" && t("debateStarting")}
+                    {(state.phase === "report" || state.phase === "done") && t("panelHasSpoken")}
                   </m.p>
                 )}
-              </AnimatePresence>
+              </>
             </div>
 
             {/* the pitcher */}
@@ -145,15 +209,7 @@ export function Boardroom({ sessionId, transcript, language }: Props) {
             </div>
           )}
 
-          {qaOver ? (
-            <div className="bg-surface border-border rounded-2xl border p-5">
-              <h2 className="text-xl font-bold">{t("qaDone.title")}</h2>
-              <p className="text-ink-muted mt-1">{t("qaDone.body")}</p>
-              <Link href="/pitch" className="text-accent mt-3 inline-block font-semibold underline">
-                {t("qaDone.newPitch")}
-              </Link>
-            </div>
-          ) : (
+          {inQa && mode === "live" && (
             <AnswerComposer
               questionId={state.awaiting}
               askerName={asker ? tj(`${asker}.name`) : null}
@@ -162,27 +218,40 @@ export function Boardroom({ sessionId, transcript, language }: Props) {
             />
           )}
 
+          {showVerdicts && <VerdictBoard verdicts={state.verdicts} language={language} />}
+
+          {state.score && (
+            <ScoreReveal
+              key={mode === "replay" ? "replay" : "live"}
+              score={state.score}
+              verdicts={state.verdicts}
+            />
+          )}
+
+          {state.phase === "done" && mode === "live" && (
+            <div className="bg-surface border-border flex flex-col gap-3 rounded-2xl border p-5">
+              <h2 className="text-xl font-bold">{t("done.title")}</h2>
+              <p className="text-ink-muted">{t("done.body")}</p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={replay}
+                  className="bg-accent text-on-accent hover:bg-accent-strong rounded-xl px-5 py-2.5 font-semibold"
+                >
+                  ↺ {t("controls.replay")}
+                </button>
+                <Link
+                  href="/pitch"
+                  className="border-border hover:bg-surface-2 rounded-xl border px-5 py-2.5 font-semibold"
+                >
+                  {t("done.newPitch")}
+                </Link>
+              </div>
+            </div>
+          )}
+
           {state.history.length > 0 && (
-            <details className="bg-surface border-border rounded-2xl border p-4">
-              <summary className="cursor-pointer font-medium">{t("conversation")}</summary>
-              <ol className="mt-3 flex flex-col gap-2" lang={language} dir={directionOf(language)}>
-                {state.history.map((item) => (
-                  <li key={item.id} className="text-sm">
-                    <span
-                      className="font-semibold"
-                      style={
-                        item.type === "answer"
-                          ? undefined
-                          : { color: JUDGE_BY_ID[item.judgeId].color }
-                      }
-                    >
-                      {item.type === "answer" ? t("you") : tj(`${item.judgeId}.name`)}:
-                    </span>{" "}
-                    {item.text}
-                  </li>
-                ))}
-              </ol>
-            </details>
+            <ConversationLog items={state.history} language={language} />
           )}
 
           {/* Screen readers get each finished line once, not word by word. */}

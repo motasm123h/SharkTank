@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { CompletedSessionSchema, EMPTY_TRANSCRIPT, JUDGE_IDS, type PitchInput } from "@/domain";
+import {
+  CompletedSessionSchema,
+  EMPTY_TRANSCRIPT,
+  JUDGE_IDS,
+  type PitchInput,
+  type SessionEvent,
+  type Transcript,
+} from "@/domain";
 import { localize } from "./localize";
 import { INSTANT_PACING, MockEngine } from "./MockEngine";
 import { MOCK_SCENARIOS } from "./scenarios";
@@ -97,4 +104,66 @@ it("stops streaming when aborted", async () => {
     }
   };
   await expect(run()).rejects.toThrow("aborted");
+});
+
+describe("resuming an interrupted session", () => {
+  async function collectFrom(transcript: Transcript, fast = false) {
+    const input = sampleInput("damascus-healthy-food", "en");
+    const events: SessionEvent[] = [];
+    for await (const e of engine.run({ input, transcript }, { fast })) events.push(e);
+    return events;
+  }
+
+  it("continues the debate without repeating turns already saved", async () => {
+    const { transcript: full } = await playThrough(
+      engine,
+      sampleInput("damascus-healthy-food", "en"),
+    );
+    const partial: Transcript = {
+      ...full,
+      debate: full.debate.slice(0, 2),
+      verdicts: [],
+      report: undefined,
+    };
+    const events = await collectFrom(partial);
+    const turns = events.flatMap((e) => (e.type === "debate_turn" ? [e.turn.id] : []));
+    expect(turns).toEqual(full.debate.slice(2).map((d) => d.id));
+    expect(events.some((e) => e.type === "speech_start" && e.kind === "ack")).toBe(false);
+    expect(events.filter((e) => e.type === "verdict")).toHaveLength(5);
+  });
+
+  it("skips judges who already gave a verdict", async () => {
+    const { transcript: full } = await playThrough(
+      engine,
+      sampleInput("damascus-healthy-food", "en"),
+    );
+    const partial: Transcript = { ...full, verdicts: full.verdicts.slice(0, 3), report: undefined };
+    const events = await collectFrom(partial);
+    expect(events.some((e) => e.type === "phase" && e.phase === "debate")).toBe(false);
+    const judges = events.flatMap((e) => (e.type === "verdict" ? [e.verdict.judgeId] : []));
+    expect(judges).toEqual(full.verdicts.slice(3).map((v) => v.judgeId));
+  });
+
+  it("announces who a debate turn answers before streaming it", async () => {
+    const { events } = await playThrough(engine, sampleInput("mumbai-tutoring", "en"));
+    const starts = events.flatMap((e) =>
+      e.type === "speech_start" && e.kind === "debate" ? [e] : [],
+    );
+    const turns = events.flatMap((e) => (e.type === "debate_turn" ? [e.turn] : []));
+    expect(starts.map((s) => [s.stance, s.replyTo])).toEqual(
+      turns.map((t) => [t.stance, t.replyTo]),
+    );
+  });
+
+  it("emits without delays in fast mode", async () => {
+    const slow = new MockEngine({ wordMs: 200, beatMs: 500 });
+    const input = sampleInput("cairo-water-app", "en");
+    const started = Date.now();
+    let count = 0;
+    for await (const event of slow.run({ input, transcript: EMPTY_TRANSCRIPT }, { fast: true })) {
+      if (event) count++;
+    }
+    expect(count).toBeGreaterThan(10);
+    expect(Date.now() - started).toBeLessThan(200);
+  });
 });

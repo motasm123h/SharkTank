@@ -1,6 +1,7 @@
 import { memo } from "react";
-import type { Judge, JudgeState } from "@/domain";
+import type { DebateStance, Judge, JudgeState } from "@/domain";
 import { JudgeAvatar } from "./JudgeAvatar";
+import { STANCE_STYLE } from "./stance";
 
 type Props = {
   judge: Judge;
@@ -8,11 +9,24 @@ type Props = {
   active: boolean;
   dimmed: boolean;
   asked: boolean;
+  /** Set when the current speaker is replying to this judge. */
+  targetedBy: DebateStance | null;
   name: string;
   askedLabel: string;
 };
 
-function JudgeSeatView({ judge, state, active, dimmed, asked, name, askedLabel }: Props) {
+function JudgeSeatView({
+  judge,
+  state,
+  active,
+  dimmed,
+  asked,
+  targetedBy,
+  name,
+  askedLabel,
+}: Props) {
+  const target = targetedBy ? STANCE_STYLE[targetedBy] : null;
+
   return (
     <figure className="relative flex flex-col items-center" aria-label={name}>
       {/* spotlight behind the active judge */}
@@ -24,15 +38,29 @@ function JudgeSeatView({ judge, state, active, dimmed, asked, name, askedLabel }
           background: `radial-gradient(closest-side, ${judge.color}55, transparent)`,
         }}
       />
+      {/* dashed ring on the judge being answered, colored by stance */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-[4%] top-[2%] aspect-square rounded-full border-2 border-dashed transition-opacity duration-300"
+        style={{ opacity: target ? 1 : 0, borderColor: target?.ring }}
+      />
       <div
         className="relative w-full max-w-28 transition-[transform,opacity] duration-300 will-change-transform"
         style={{
           transform: active ? "translateY(-6px) scale(1.08)" : undefined,
-          opacity: dimmed ? 0.7 : 1,
+          opacity: dimmed && !target ? 0.7 : 1,
         }}
       >
         <JudgeAvatar judgeId={judge.id} state={state} className="block h-auto w-full" />
       </div>
+      {target && (
+        <span
+          aria-hidden
+          className={`${target.bg} ${target.text} bg-surface absolute start-0 top-0 grid size-5 place-items-center rounded-full text-xs font-bold shadow sm:size-6`}
+        >
+          {target.icon}
+        </span>
+      )}
       {asked && (
         <span
           title={askedLabel}

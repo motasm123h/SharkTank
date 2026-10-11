@@ -107,10 +107,14 @@ Arabic: a healthy-food delivery service in Damascus, a tutoring app in Mumbai, a
 with a demo picker.
 
 In the app, `POST /api/sessions/:id/turn` (optionally with the user's answer) runs one turn and
-streams the events as NDJSON; the transcript is saved to Postgres as it progresses, so a reload
+streams the events as NDJSON; each finished item is saved to Postgres before it is sent, so a reload
 resumes where the user left off. The boardroom (`src/components/boardroom/`) folds the events
 into scene state with a pure reducer. Judge characters sit behind a `<JudgeAvatar judgeId state />`
 interface so the SVG versions can be swapped for Rive animations later.
+
+Skip sends `{ fast: true }`: the server stops the run in progress (one run per session), and the
+engine continues from the saved transcript without presentation delays. Replay rebuilds the show
+in the browser from the transcript, with no engine call.
 
 Honesty rule: every number is a `Figure` with `isEstimate`; a figure presented as a fact must
 carry a `source`, and the schema rejects it otherwise.

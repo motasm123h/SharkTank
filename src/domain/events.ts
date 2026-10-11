@@ -2,7 +2,7 @@ import { z } from "zod";
 import { scoreSchema } from "./common";
 import { JudgeIdSchema, JudgeStateSchema } from "./judges";
 import { ReportSchema } from "./report";
-import { DebateTurnSchema, QuestionSchema, VerdictSchema } from "./session";
+import { DebateStanceSchema, DebateTurnSchema, QuestionSchema, VerdictSchema } from "./session";
 
 export const SessionPhaseSchema = z.enum(["entrance", "qa", "debate", "verdict", "report", "done"]);
 export type SessionPhase = z.infer<typeof SessionPhaseSchema>;
@@ -25,6 +25,9 @@ export const SessionEventSchema = z.discriminatedUnion("type", [
     speechId: z.string().min(1),
     judgeId: JudgeIdSchema,
     kind: SpeechKindSchema,
+    /** Debate only: known up front so the scene can show who is answering whom while it streams. */
+    stance: DebateStanceSchema.optional(),
+    replyTo: z.object({ turnId: z.string().min(1), judgeId: JudgeIdSchema }).optional(),
   }),
   z.object({ type: z.literal("speech_delta"), speechId: z.string().min(1), delta: z.string() }),
   z.object({ type: z.literal("speech_end"), speechId: z.string().min(1) }),
