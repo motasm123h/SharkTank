@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { PitchForm, type DemoOption } from "@/components/pitch/PitchForm";
 import type { PitchInput } from "@/domain";
@@ -10,9 +11,6 @@ import { aiEnv } from "@/lib/env";
 
 type Props = { params: Promise<{ locale: Locale }> };
 
-// Read AI_PROVIDER per request, so switching to a real model needs no rebuild.
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Pitch" });
@@ -20,6 +18,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PitchPage({ params }: Props) {
+  // Render per request: AI_PROVIDER decides whether demos show, and switching
+  // to a real model must not need a rebuild.
+  await connection();
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("Pitch");
