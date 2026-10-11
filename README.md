@@ -93,6 +93,12 @@ docs/             product brief
 | react-hook-form                                                      | Form state without re-rendering on every keystroke             |
 | @hookform/resolvers                                                  | Lets the form validate with the same Zod schemas as the server |
 | motion                                                               | Boardroom scene animations (entrance, bubbles), GPU-friendly   |
+| recharts                                                             | Report charts (radar, sales scenarios, marketing budget)       |
+| react-globe.gl                                                       | Interactive 3D globe for "where else it could work"            |
+| world-atlas, topojson-client                                         | Country shapes for the globe and the flat map                  |
+| i18n-iso-countries                                                   | Maps country codes to the map shapes                           |
+| three, @react-three/fiber, @react-three/drei                         | 3D boardroom and landing hero (characters built in code)       |
+| @react-three/postprocessing, postprocessing                          | Bloom and vignette in the 3D scenes                            |
 
 ## How a session works
 
@@ -118,3 +124,17 @@ in the browser from the transcript, with no engine call.
 
 Honesty rule: every number is a `Figure` with `isEstimate`; a figure presented as a fact must
 carry a `source`, and the schema rejects it otherwise.
+
+## 3D scenes
+
+The boardroom and the landing hero are rendered with React Three Fiber
+(`src/components/three/`). Judges and the pitcher are built from simple shapes in code (no model
+files) and keep the same contract as the SVG avatars: `judgeId` + `state`. A camera director
+(`CameraDirector.tsx`, pure `chooseShot` function with tests) picks the shot from the scene state:
+wide establishing shot, dolly-in on the entrance, close-up on the speaker, over-the-shoulder while
+you answer, two-shots during the debate, a low push-in per verdict and an orbit for the score.
+
+Speech bubbles, verdict cards and the score stay in the page (sharp text, RTL, screen readers).
+Devices without WebGL2, with "reduce motion", data saver or little memory/CPU get the 2D scene;
+anyone can switch with the 3D/2D button. Bloom and soft shadows only run on capable desktops, and a
+performance monitor drops to the light mode if the frame rate falls.

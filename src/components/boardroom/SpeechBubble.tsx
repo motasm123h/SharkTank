@@ -13,10 +13,20 @@ type Props = {
   kindLabel?: string;
   /** Debate: who this line answers, and how. */
   reply?: { name: string; color: string; stance: DebateStance; label: string };
+  /** Point at the seat (2D). The 3D camera frames the speaker instead. */
+  showPointer?: boolean;
 };
 
 /** Streamed speech from a judge, with a pointer toward their seat. */
-export function SpeechBubble({ speech, judge, name, language, kindLabel, reply }: Props) {
+export function SpeechBubble({
+  speech,
+  judge,
+  name,
+  language,
+  kindLabel,
+  reply,
+  showPointer = true,
+}: Props) {
   // Seats are laid out in a 5-column grid that follows the page direction,
   // so a logical (start-based) offset lines the pointer up in both LTR and RTL.
   const pointer = `calc(${((judge.seat + 0.5) / 5) * 100}% - 8px)`;
@@ -30,11 +40,13 @@ export function SpeechBubble({ speech, judge, name, language, kindLabel, reply }
       transition={{ duration: 0.2 }}
       className="relative"
     >
-      <span
-        aria-hidden
-        className="bg-surface absolute -top-2 size-4 rotate-45 border-s-2 border-t-2"
-        style={{ insetInlineStart: pointer, borderColor: judge.color }}
-      />
+      {showPointer && (
+        <span
+          aria-hidden
+          className="bg-surface absolute -top-2 size-4 rotate-45 border-s-2 border-t-2"
+          style={{ insetInlineStart: pointer, borderColor: judge.color }}
+        />
+      )}
       <div
         className="bg-surface rounded-2xl border-2 px-4 py-3 shadow-sm"
         style={{ borderColor: judge.color }}

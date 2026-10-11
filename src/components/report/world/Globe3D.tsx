@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Globe, { type GlobeMethods } from "react-globe.gl";
 import { centroid, escapeHtml, fitColor, type CountryFeature } from "./geo";
 
@@ -66,6 +66,46 @@ export default function Globe3D({
     controls.autoRotateSpeed = 0.4;
   }, [width, features, homeId, colors.ocean]);
 
+  // Fly to a country when it is picked (from the globe or the ranked list).
+  const firstSelection = useRef(true);
+  useEffect(() => {
+    const globe = globeRef.current;
+    if (!globe || !selectedId) return;
+    if (firstSelection.current) {
+      firstSelection.current = false;
+      return;
+    }
+    const target = features.find((f) => f.id === selectedId);
+    const center = target ? centroid(target.geometry) : null;
+    if (!center) return;
+    const controls = globe.controls() as unknown as { autoRotate: boolean };
+    controls.autoRotate = false;
+    globe.pointOfView({ ...center, altitude: 1.7 }, 1400);
+  }, [selectedId, features]);
+
+  // Arcs from the user's country to every good-fit country, and a pulse at home.
+  const { arcs, rings } = useMemo(() => {
+    const home = features.find((f) => f.id === homeId);
+    const start = home ? centroid(home.geometry) : null;
+    if (!start) return { arcs: [], rings: [] };
+    const arcs = features.flatMap((f) => {
+      const fit = fitById.get(f.id);
+      const end = fit !== undefined && f.id !== homeId ? centroid(f.geometry) : null;
+      return end
+        ? [
+            {
+              startLat: start.lat,
+              startLng: start.lng,
+              endLat: end.lat,
+              endLng: end.lng,
+              color: fitColor(fit!),
+            },
+          ]
+        : [];
+    });
+    return { arcs, rings: [start] };
+  }, [features, fitById, homeId]);
+
   const height = Math.min(420, Math.max(280, width * 0.8));
 
   return (
@@ -106,6 +146,20 @@ export default function Globe3D({
             if (fitById.has(id)) onSelect(id);
           }}
           polygonsTransitionDuration={200}
+          arcsData={arcs}
+          arcColor={(a: object) => [colors.ink, (a as { color: string }).color]}
+          arcStroke={0.6}
+          arcAltitudeAutoScale={0.45}
+          arcDashLength={0.45}
+          arcDashGap={0.25}
+          arcDashAnimateTime={2600}
+          ringsData={rings}
+          ringLat="lat"
+          ringLng="lng"
+          ringColor={() => (t: number) => `rgba(245,182,66,${1 - t})`}
+          ringMaxRadius={6}
+          ringPropagationSpeed={2.5}
+          ringRepeatPeriod={1100}
         />
       )}
     </div>

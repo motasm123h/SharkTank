@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { JudgeCard } from "@/components/judges/JudgeCard";
+import { HeroStage } from "@/components/three/HeroStage";
 import { JUDGES } from "@/domain";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -28,6 +29,7 @@ export default async function HomePage({ params }: Props) {
           {t("cta")}
         </Link>
         <p className="text-ink-muted text-sm">{t("honesty")}</p>
+        <HeroStage />
       </section>
 
       <section aria-labelledby="panel-title" className="py-10">

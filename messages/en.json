@@ -97,7 +97,9 @@
     "controls": {
       "skip": "Skip",
       "skipLabel": "Skip ahead: show the rest of this part right away",
-      "replay": "Replay"
+      "replay": "Replay",
+      "to3d": "Switch to the 3D boardroom",
+      "to2d": "Switch to the simple 2D view"
     },
     "debateStarting": "The judges turn to each other…",
     "panelHasSpoken": "The panel has spoken.",

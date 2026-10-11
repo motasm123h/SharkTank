@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, LazyMotion, MotionConfig, domAnimation, m } from "motion/react";
+import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { JUDGES, type JudgeId, type Locale, type Transcript } from "@/domain";
 import { Link } from "@/i18n/navigation";
@@ -12,7 +13,14 @@ import { ScoreReveal } from "./ScoreReveal";
 import { SpeechBubble } from "./SpeechBubble";
 import { UserAvatar } from "./UserAvatar";
 import { VerdictBoard } from "./VerdictBoard";
+import { useSceneMode } from "./useSceneMode";
 import { useSessionStream } from "./useSessionStream";
+
+// The 3D stage (three.js) is a separate chunk, loaded only when used.
+const BoardroomCanvas = dynamic(() => import("@/components/three/BoardroomCanvas"), {
+  ssr: false,
+  loading: () => <div className="bg-surface-2 h-full w-full animate-pulse" />,
+});
 
 type Props = {
   sessionId: string;
@@ -54,7 +62,69 @@ export function Boardroom({ sessionId, transcript, language }: Props) {
   const inQa = state.phase === "loading" || state.phase === "entrance" || state.phase === "qa";
   const showVerdicts = state.verdicts.length > 0 || state.phase === "verdict" || state.score;
   const target = speech?.kind === "debate" && speech.replyTo && speech.stance ? speech : null;
-  const offstage = directionOf(uiLocale) === "rtl" ? "60vw" : "-60vw";
+  const rtl = directionOf(uiLocale) === "rtl";
+  const offstage = rtl ? "60vw" : "-60vw";
+  const scene = useSceneMode();
+  const use3d = scene.mode === "3d";
+
+  /** The current line (or a stage direction), shared by the 2D and 3D stages. */
+  const speechLine = (showPointer: boolean) =>
+    speech && speaker ? (
+      <SpeechBubble
+        key={speech.id}
+        speech={speech}
+        judge={speaker}
+        name={tj(`${speaker.id}.name`)}
+        language={language}
+        showPointer={showPointer}
+        kindLabel={
+          speech.kind === "question"
+            ? t("question")
+            : speech.kind === "verdict"
+              ? t("verdict")
+              : undefined
+        }
+        reply={
+          target?.replyTo && target.stance
+            ? {
+                name: tj(`${target.replyTo.judgeId}.name`),
+                color: JUDGE_BY_ID[target.replyTo.judgeId].color,
+                stance: target.stance,
+                label: t(`stance.${target.stance}`),
+              }
+            : undefined
+        }
+      />
+    ) : (
+      <m.p
+        key={state.phase}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className={`text-center ${showPointer ? "text-ink-muted pt-6" : "bg-surface/80 mx-auto w-fit rounded-full px-4 py-2 text-sm backdrop-blur"}`}
+      >
+        {state.phase === "loading" && t("seating")}
+        {state.phase === "entrance" && t("entering")}
+        {state.phase === "debate" && t("debateStarting")}
+        {(state.phase === "report" || state.phase === "done") && t("panelHasSpoken")}
+      </m.p>
+    );
+
+  const userLine = (
+    <AnimatePresence>
+      {state.userBubble && (
+        <m.p
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          lang={language}
+          dir={directionOf(language)}
+          className="bg-accent text-on-accent mx-4 line-clamp-2 max-w-md rounded-2xl px-3 py-2 text-sm shadow"
+        >
+          {state.userBubble}
+        </m.p>
+      )}
+    </AnimatePresence>
+  );
 
   return (
     <LazyMotion features={domAnimation} strict>
@@ -64,12 +134,25 @@ export function Boardroom({ sessionId, transcript, language }: Props) {
             aria-label={t("sceneLabel")}
             className="border-border relative overflow-hidden rounded-3xl border bg-gradient-to-b from-[var(--surface-2)] to-[var(--bg)]"
           >
-            {/* part of the show + skip / replay */}
-            <div className="relative z-20 flex items-center justify-between gap-2 px-3 pt-3 sm:px-5">
+            {/* part of the show + 3D/2D + skip / replay */}
+            <div
+              className={`z-20 flex items-center justify-between gap-2 px-3 pt-3 sm:px-5 ${use3d ? "absolute inset-x-0 top-0" : "relative"}`}
+            >
               <span className="bg-surface/80 text-ink-muted rounded-full px-3 py-1 text-xs font-semibold backdrop-blur">
                 {mode === "replay" ? t("replaying") : t(`phase.${PHASE_LABEL[state.phase]}`)}
               </span>
               <div className="flex gap-2">
+                {scene.capable && (
+                  <button
+                    type="button"
+                    onClick={scene.toggle}
+                    aria-label={use3d ? t("controls.to2d") : t("controls.to3d")}
+                    title={use3d ? t("controls.to2d") : t("controls.to3d")}
+                    className="bg-surface/90 border-border hover:bg-surface-2 rounded-full border px-3 py-1.5 text-xs font-semibold backdrop-blur"
+                  >
+                    {use3d ? "2D" : "3D"}
+                  </button>
+                )}
                 {canReplay && (
                   <button
                     type="button"
@@ -93,104 +176,68 @@ export function Boardroom({ sessionId, transcript, language }: Props) {
               </div>
             </div>
 
-            {/* judges behind the table */}
-            <div className="grid grid-cols-5 gap-1 px-2 pt-3 sm:gap-4 sm:px-8 sm:pt-4">
-              {JUDGES.map((judge) => (
-                <JudgeSeat
-                  key={judge.id}
-                  judge={judge}
-                  state={state.judges[judge.id]}
-                  active={speech?.judgeId === judge.id}
-                  dimmed={!!speech && speech.judgeId !== judge.id && !speech.done}
-                  asked={inQa && state.asked.includes(judge.id)}
-                  targetedBy={
-                    target?.replyTo?.judgeId === judge.id ? (target.stance ?? null) : null
-                  }
-                  name={tj(`${judge.id}.name`)}
-                  askedLabel={t("asked")}
-                />
-              ))}
-            </div>
-            <div className="bg-table relative z-10 mx-1 -mt-5 grid h-9 grid-cols-5 items-center gap-1 rounded-xl px-2 shadow-md sm:mx-4 sm:-mt-8 sm:h-11 sm:gap-4 sm:px-8">
-              {JUDGES.map((judge) => (
-                <span
-                  key={judge.id}
-                  className="truncate rounded bg-black/25 px-1 py-0.5 text-center text-[10px] font-semibold text-white sm:text-xs"
-                >
-                  {tj(`${judge.id}.short`)}
-                </span>
-              ))}
-            </div>
-
-            {/* what is being said */}
-            <div className="min-h-36 px-3 pt-5 pb-2 sm:min-h-40 sm:px-8">
+            {use3d ? (
+              <div className="relative h-[62vh] max-h-[640px] min-h-[380px]">
+                <BoardroomCanvas state={state} rtl={rtl} />
+                {/* text stays in the page: sharp, translatable, readable by screen readers */}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-2 p-3 sm:p-5">
+                  {userLine}
+                  <div className="pointer-events-auto w-full max-w-2xl">{speechLine(false)}</div>
+                </div>
+              </div>
+            ) : (
               <>
-                {speech && speaker ? (
-                  <SpeechBubble
-                    key={speech.id}
-                    speech={speech}
-                    judge={speaker}
-                    name={tj(`${speaker.id}.name`)}
-                    language={language}
-                    kindLabel={
-                      speech.kind === "question"
-                        ? t("question")
-                        : speech.kind === "verdict"
-                          ? t("verdict")
-                          : undefined
-                    }
-                    reply={
-                      target?.replyTo && target.stance
-                        ? {
-                            name: tj(`${target.replyTo.judgeId}.name`),
-                            color: JUDGE_BY_ID[target.replyTo.judgeId].color,
-                            stance: target.stance,
-                            label: t(`stance.${target.stance}`),
-                          }
-                        : undefined
-                    }
-                  />
-                ) : (
-                  <m.p
-                    key={state.phase}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-ink-muted pt-6 text-center"
-                  >
-                    {state.phase === "loading" && t("seating")}
-                    {state.phase === "entrance" && t("entering")}
-                    {state.phase === "debate" && t("debateStarting")}
-                    {(state.phase === "report" || state.phase === "done") && t("panelHasSpoken")}
-                  </m.p>
-                )}
-              </>
-            </div>
+                {/* judges behind the table */}
+                <div className="grid grid-cols-5 gap-1 px-2 pt-3 sm:gap-4 sm:px-8 sm:pt-4">
+                  {JUDGES.map((judge) => (
+                    <JudgeSeat
+                      key={judge.id}
+                      judge={judge}
+                      state={state.judges[judge.id]}
+                      active={speech?.judgeId === judge.id}
+                      dimmed={!!speech && speech.judgeId !== judge.id && !speech.done}
+                      asked={inQa && state.asked.includes(judge.id)}
+                      targetedBy={
+                        target?.replyTo?.judgeId === judge.id ? (target.stance ?? null) : null
+                      }
+                      name={tj(`${judge.id}.name`)}
+                      askedLabel={t("asked")}
+                    />
+                  ))}
+                </div>
+                <div className="bg-table relative z-10 mx-1 -mt-5 grid h-9 grid-cols-5 items-center gap-1 rounded-xl px-2 shadow-md sm:mx-4 sm:-mt-8 sm:h-11 sm:gap-4 sm:px-8">
+                  {JUDGES.map((judge) => (
+                    <span
+                      key={judge.id}
+                      className="truncate rounded bg-black/25 px-1 py-0.5 text-center text-[10px] font-semibold text-white sm:text-xs"
+                    >
+                      {tj(`${judge.id}.short`)}
+                    </span>
+                  ))}
+                </div>
 
-            {/* the pitcher */}
-            <div className="relative flex h-32 items-end justify-center sm:h-40">
-              <AnimatePresence>
-                {state.userBubble && (
-                  <m.p
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    lang={language}
-                    dir={directionOf(language)}
-                    className="bg-accent text-on-accent absolute top-0 mx-4 line-clamp-2 max-w-md rounded-2xl px-3 py-2 text-sm shadow"
+                {/* what is being said */}
+                <div className="min-h-36 px-3 pt-5 pb-2 sm:min-h-40 sm:px-8">
+                  {speechLine(true)}
+                </div>
+
+                {/* the pitcher */}
+                <div className="relative flex h-32 items-end justify-center sm:h-40">
+                  <div className="absolute top-0">{userLine}</div>
+                  <m.div
+                    initial={state.user === "standing" ? false : { x: offstage }}
+                    animate={{ x: state.user === "outside" ? offstage : 0 }}
+                    transition={{ duration: 1.8, ease: "easeOut" }}
+                    className="w-16 will-change-transform sm:w-20"
                   >
-                    {state.userBubble}
-                  </m.p>
-                )}
-              </AnimatePresence>
-              <m.div
-                initial={state.user === "standing" ? false : { x: offstage }}
-                animate={{ x: state.user === "outside" ? offstage : 0 }}
-                transition={{ duration: 1.8, ease: "easeOut" }}
-                className="w-16 will-change-transform sm:w-20"
-              >
-                <UserAvatar walking={state.user === "entering"} className="block h-auto w-full" />
-              </m.div>
-            </div>
+                    <UserAvatar
+                      walking={state.user === "entering"}
+                      className="block h-auto w-full"
+                    />
+                  </m.div>
+                </div>
+              </>
+            )}
           </section>
 
           {state.error && (
