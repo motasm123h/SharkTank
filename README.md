@@ -93,6 +93,7 @@ docs/             product brief
 | react-hook-form                                                      | Form state without re-rendering on every keystroke             |
 | @hookform/resolvers                                                  | Lets the form validate with the same Zod schemas as the server |
 | motion                                                               | Boardroom scene animations (entrance, bubbles), GPU-friendly   |
+| ai, @ai-sdk/google, @ai-sdk/openai-compatible                        | Vercel AI SDK: real judges and report (Gemini, OpenRouter)     |
 | recharts                                                             | Report charts (radar, sales scenarios, marketing budget)       |
 | react-globe.gl                                                       | Interactive 3D globe for "where else it could work"            |
 | world-atlas, topojson-client                                         | Country shapes for the globe and the flat map                  |
@@ -138,3 +139,32 @@ Speech bubbles, verdict cards and the score stay in the page (sharp text, RTL, s
 Devices without WebGL2, with "reduce motion", data saver or little memory/CPU get the 2D scene;
 anyone can switch with the 3D/2D button. Bloom and soft shadows only run on capable desktops, and a
 performance monitor drops to the light mode if the frame rate falls.
+
+## Real AI (Gemini)
+
+By default the panel runs on the mock engine (`AI_PROVIDER=mock`, no key needed). To use real AI:
+
+1. Create a free key at https://aistudio.google.com/apikey.
+2. Copy `.env.example` to `.env` (never commit it) and set `AI_PROVIDER=google` and `AI_API_KEY=...`.
+3. Recreate the app container so it reads the new values: `docker compose up -d web`.
+
+How it works (`src/engine/ai/`):
+
+- **Router with fallbacks** (`router.ts`): every call goes to the first model in a chain. If it is
+  overloaded, rate-limited or out of daily quota, the call moves to the next model, and the failed
+  model is skipped for a while (Google's retry delay, 8 s for an overload, 1 h for a daily quota) so
+  later calls don't waste quota on it. Chains are set with `AI_MODEL` / `AI_REPORT_MODEL` and can mix
+  providers (`openrouter:` entries need `OPENROUTER_API_KEY`). When every model is busy the viewer
+  sees "the panel is busy, try again in a minute" and can retry; nothing already said is lost.
+- **Drafts, then strict data** (`drafts.ts`): models fill simple, flat drafts (plain numbers, one
+  currency). Code builds the strict domain types from them, adds units, repairs who-answers-whom in
+  the debate, checks every rule, and rejects unusable output (the router then tries the next model).
+- **Honesty**: every number is an estimate unless it is tied to a search result we actually
+  received. Without web search (`AI_SEARCH=off`, the default; Gemini's Google Search is not in the
+  free tier) competitors are listed from the model's knowledge with status "unknown".
+- **Speed**: the debate is written while the last reaction plays, and the report while the verdicts
+  play. Speech is shown word by word after a reply has been checked, so a failed model never leaves
+  a half sentence on screen.
+- **Limits**: `AI_DAILY_SESSION_LIMIT` (default 30) caps new real sessions per day.
+- **Which model answered**: in development, http://localhost:3000/api/dev/ai-usage lists recent calls
+  (model, time, failures). The server log has one `[ai]` line per call.

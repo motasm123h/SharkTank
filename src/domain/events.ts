@@ -39,7 +39,14 @@ export const SessionEventSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("report"), report: ReportSchema }),
   z.object({
     type: z.literal("error"),
-    code: z.enum(["awaiting_answer", "invalid_transcript", "provider_error", "budget_exceeded"]),
+    code: z.enum([
+      "awaiting_answer",
+      "invalid_transcript",
+      "provider_error",
+      // Every model is busy or out of quota for now; retrying later can work.
+      "provider_busy",
+      "budget_exceeded",
+    ]),
     message: z.string(),
     retryable: z.boolean(),
   }),

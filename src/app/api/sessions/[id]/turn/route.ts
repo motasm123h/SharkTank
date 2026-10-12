@@ -1,9 +1,14 @@
 import { z } from "zod";
 import { AnswerSchema, SessionEventSchema, type SessionEvent } from "@/domain";
-import { getEngine } from "@/engine";
+import { dailySessionLimit, getEngine } from "@/engine";
 import { readAnonId } from "@/lib/anon";
 import { takeOverRun } from "@/server/runs";
-import { loadOwnSession, saveProgress, statusForPhase } from "@/server/sessions";
+import {
+  countSessionsStartedToday,
+  loadOwnSession,
+  saveProgress,
+  statusForPhase,
+} from "@/server/sessions";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +59,25 @@ export async function POST(request: Request, { params }: Params) {
     }
     transcript.answers.push(answer);
     await saveProgress(id, transcript, status);
+  }
+
+  // Real AI costs quota: cap how many new sessions start per day.
+  const limit = dailySessionLimit();
+  const starting = session.status === "intake" && transcript.questions.length === 0;
+  if (limit !== undefined && starting && (await countSessionsStartedToday()) >= limit) {
+    run.finish();
+    const event: SessionEvent = {
+      type: "error",
+      code: "budget_exceeded",
+      message: "The daily session limit has been reached",
+      retryable: false,
+    };
+    return new Response(JSON.stringify(event) + "\n", {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-store",
+      },
+    });
   }
 
   const engine = getEngine();

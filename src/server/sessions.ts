@@ -1,6 +1,6 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
-import { and, eq, type SQL } from "drizzle-orm";
+import { and, count, eq, gte, ne, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db";
 import { pitchSessions } from "@/db/schema";
@@ -123,4 +123,15 @@ export async function saveProgress(id: string, transcript: Transcript, status: S
       updatedAt: new Date(),
     })
     .where(eq(pitchSessions.id, id));
+}
+
+/** Sessions that got past the intake form since midnight UTC (all visitors). */
+export async function countSessionsStartedToday(): Promise<number> {
+  const midnight = new Date();
+  midnight.setUTCHours(0, 0, 0, 0);
+  const [row] = await getDb()
+    .select({ n: count() })
+    .from(pitchSessions)
+    .where(and(ne(pitchSessions.status, "intake"), gte(pitchSessions.createdAt, midnight)));
+  return row?.n ?? 0;
 }

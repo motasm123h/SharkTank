@@ -40,7 +40,7 @@ export type HistoryItem =
     }
   | { type: "verdict"; id: string; judgeId: JudgeId; decision: Verdict["decision"]; text: string };
 
-export type SceneError = "connection" | "panel";
+export type SceneError = "connection" | "panel" | "busy" | "limit";
 
 export type SceneState = {
   /** "loading" until the first event (or a resumed transcript) arrives. */
@@ -289,7 +289,13 @@ function applyEvent(state: SceneState, event: SessionEvent): SceneState {
               : state.speech,
         };
       }
-      return { ...state, error: "panel" };
+      const error: SceneError =
+        event.code === "provider_busy"
+          ? "busy"
+          : event.code === "budget_exceeded"
+            ? "limit"
+            : "panel";
+      return { ...state, error };
     }
   }
 }

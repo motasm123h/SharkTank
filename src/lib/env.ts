@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 
 const aiSchema = z.object({
-  AI_PROVIDER: z.enum(["mock"]).default("mock"),
+  AI_PROVIDER: z.enum(["mock", "google", "openrouter"]).default("mock"),
   AI_MODEL: z.string().optional(),
   AI_API_KEY: z.string().optional(),
 });

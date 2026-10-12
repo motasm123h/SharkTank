@@ -86,7 +86,9 @@
     "retry": "Try again",
     "errors": {
       "connection": "The connection to the panel dropped.",
-      "panel": "The panel ran into a problem."
+      "panel": "The panel ran into a problem.",
+      "busy": "The panel is very busy right now. Please try again in a minute.",
+      "limit": "Today's free sessions are used up. Please come back tomorrow."
     },
     "phase": {
       "qa": "Questions",
