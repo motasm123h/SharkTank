@@ -14,3 +14,6 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 *.log
+
+# Launch video and post drafts (large files, not part of the app)
+/launch/

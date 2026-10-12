@@ -1,7 +1,51 @@
-# The Panel
+# The Panel 🦈
 
-Pitch a business idea to a panel of five AI judges, Shark Tank style, and get a localized
-verdict and report. See [docs/brief.md](docs/brief.md) for the full product brief.
+**Pitch your business idea to five AI judges, Shark Tank style.** They question you, argue with
+each other in a 3D boardroom, say "I'm in" or "I'm out", and hand you an honest report for *your*
+city: price, sales scenarios, marketing plan with budgets, local payment methods, timing, and where
+else in the world it could work. English and Arabic (full right-to-left).
+
+- 5 judges: Investor, Local Market Expert, Marketing Strategist, Financial Analyst, Skeptic
+- Real debate: judges answer each other, not just you
+- Every number is marked **≈ estimate** or **✓ fact + source**; no invented statistics
+- Interactive report with charts, a 3D globe and PDF export
+- Runs on your own **free Gemini API key**; falls back across models when one is busy
+- Open source (MIT), runs locally with one command
+
+## Quick start: your own free key, 5 minutes
+
+You need [Docker Desktop](https://www.docker.com/products/docker-desktop/) and a free Gemini key
+from [Google AI Studio](https://aistudio.google.com/apikey).
+
+```bash
+git clone https://github.com/motasm123h/SharkTank.git
+cd SharkTank
+cp .env.example .env
+```
+
+Open `.env` and set:
+
+```
+AI_PROVIDER=google
+AI_API_KEY=your-gemini-key
+```
+
+Then:
+
+```bash
+docker compose up -d
+docker compose exec web pnpm db:migrate
+```
+
+Open http://localhost:3000 and pitch. No key yet? Leave `AI_PROVIDER=mock` to try three built-in
+demo sessions.
+
+> Your key stays on your machine in `.env` (git-ignored). On Gemini's free tier Google may use
+> prompts to improve its products, so don't pitch anything confidential there.
+
+---
+
+See [docs/brief.md](docs/brief.md) for the full product brief.
 
 ## Requirements
 
